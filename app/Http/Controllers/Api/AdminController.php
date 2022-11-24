@@ -3,9 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Assigncategorie;
+use App\Models\Assignsubcategorie;
+use App\Models\Categorie;
+use App\Models\Follower;
+use App\Models\Like;
 use App\Models\Newe;
 use App\Models\Newscategorie;
 use App\Models\Post;
+use App\Models\Product;
+use App\Models\Subcategorie;
 use App\Models\User;
 use App\Notifications\Authentication;
 use Dirape\Token\Token;
@@ -126,8 +133,10 @@ class AdminController extends Controller
                 $user->otp = $otp;
                 $user->user_token = (new Token())->Unique('users', 'user_token', 60);   
                 $user->save();
+                $follower = Follower::where('follow',$user->id)->get()->count();
+                $following = Follower::where('followed',$user->id)->get()->count();
                 $token = $user->createToken('my-app-token')->plainTextToken;
-                return response(["status" => "Sucess","message" => "Login Successfully","data" => $user,"token" => $token], 200);
+                return response(["status" => "Sucess","message" => "Login Successfully","data" => $user,"follower"=>$follower,"following"=>$following,"token" => $token], 200);
             }
             else{
                 return response(["status" => "failed","message" => "Invalid OTP"], 200);
@@ -178,6 +187,60 @@ class AdminController extends Controller
                 return response($response, 200);
             }
         }
+        public function addFollwer(Request $request)
+        {
+            $rules =array(
+               "follow_id" => "required",
+               "follower_id" => "required",
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if($validator->fails()) {
+                return $validator->errors();
+            } else {
+                if(Follower::where('follow',$request->follow_id)->where('followed',$request->follower_id)->first()){
+                    $follow = Follower::where('follow',$request->follow_id)->where('followed',$request->follower_id)->first()->delete();
+                    return response(["status" => true, "message" =>"Unfollowed Sucessfully"], 200);
+                }
+                $user = new Follower();
+                $user->follow = $request->follow_id;
+                $user->followed = $request->follower_id;
+                $user->save();
+                if (true) {
+                    $response = [
+                                 'Status' => 'success',
+                                 'message' => 'Followed successfully',
+                                 'data' => $user,
+                 ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function imFollowing(Request $request)
+        {
+            $rules =array(
+                "my_id" =>"required"
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = Follower::where('followed',$request->my_id)->get();
+                if (true) {
+                    $response = [
+                                 'Status' => 'success',
+                                 'message' => 'Im following to these users',
+                                 'data' => $user,
+                 ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+
+
     public function updateUserAdmin(Request $request)
         {
         $rules =array(
@@ -263,6 +326,83 @@ class AdminController extends Controller
                 return response($response, 200);
             }
         }
+        public function getPosts(Request $request)
+        {
+            $rules =array(
+               
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = Post::all();
+                if (true) {
+                    $response = [
+                                 'Status' => 'success',
+                                 'message' => 'All Posts Fetched',
+                                 'data' => $user,
+                 ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function addLike(Request $request)
+        {
+            $rules =array(
+               "post_id" => "required",
+               "user_id" => "required",
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if($validator->fails()) {
+                return $validator->errors();
+            } else {
+                if(Like::where('post_id',$request->post_id)->where('user_id',$request->user_id)->first()){
+                    $user = Like::where('post_id',$request->post_id)->where('user_id',$request->user_id)->first()->delete();
+                    return response(["status" => true, "message" =>"Unliked Successfully"], 200);
+                }else{
+                    $user = new Like();
+                    $user->user_id = $request->user_id;
+                    $user->post_id = $request->post_id;
+                    $user->save();
+                }
+                if (true) {
+                    $response = [
+                                 'Status' => 'success',
+                                 'message' => 'Liked the post successfully',
+                                 'data' => $user,
+                 ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function getLikeCount(Request $request)
+        {
+            $rules =array(
+               "post_id" => "required"
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $post = Like::where('post_id',$request->post_id)->get();
+                if (true) {
+                    $response = [
+                                 'like_count' => count($post),
+                                 'Status' => 'success',
+                                 'message' => 'All News Categories',
+                                 'data' => $post,
+                 ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+
         public function addNewsCategory(Request $request)
         {
             $rules =array(
@@ -320,17 +460,75 @@ class AdminController extends Controller
                
              );
             $validator= Validator::make($request->all(), $rules);
-            if ($validator->fails()) {
+            if($validator->fails()) {
                 return $validator->errors();
             } else {
-               
-                $user = Newscategorie::all();
+                $user = Newe::all();
                 if (true) {
                     $response = [
                                  'Status' => 'success',
-                                 'message' => 'All News Categories',
+                                 'message' => 'All News',
                                  'data' => $user,
                  ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+
+        public function addProductCategory(Request $request)
+        {
+            $rules =array(
+                "name" => "required",
+                "description" => "required",
+                "image" => "required"
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = new Categorie();
+                $user->name = $request->name;
+                $user->description = $request->description;
+                if($request->hasFile('image'))
+                $file = $request->file('image')->store('public/img/category');
+                $user->image = $file;
+                $result = $user->save();
+                if ($result) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Categorie was successfully   created',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function addProductSubCategory(Request $request)
+        {
+            $rules =array(
+                "name" => "required",
+                "price" => "required",
+                "quantity" => "required"
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = new Subcategorie();
+                $user->name = $request->name;
+                $user->price = $request->price;
+                $user->quantity = $request->quantity;
+                $result = $user->save();
+                if ($result) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Sub Categorie was successfully   created',
+                                 'data' => $user,
+                ];
                     return response($response, 201);
                 } else {
                     return response(["status" => "error", "message" =>"Categorie is not created"], 401);
@@ -373,6 +571,115 @@ class AdminController extends Controller
                 }
             }
         }
+        public function addProduct(Request $request)
+        {
+            $rules =array(
+                "name" => "required",
+                "description" => "required",
+                "image" => "required"
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = new Product();
+                $user->name = $request->name;
+                $user->description = $request->description;
+                if($request->hasFile('image'))
+                $file = $request->file('image')->store('public/img/category');
+                $user->image = $file;
+                $result = $user->save();
+                foreach($request->category as $category){
+                    $assign = new Assigncategorie();
+                    $assign->category_id = $category;
+                    $assign->product_id = $user->id;
+                    $assign->save();
+                }
+                foreach($request->subcategory as $subcategory){
+                    $assign = new Assignsubcategorie();
+                    $assign->subcategory_id = $subcategory;
+                    $assign->product_id = $user->id;
+                    $assign->save();
+                }
+                if ($result) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Product is successfully   created',
+                                //  'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function getProduct(Request $request)
+        {
+            $rules =array(
+                
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = Product::get();
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'All Product Fetched',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function getProductById(Request $request)
+        {
+            $rules =array(
+                "product_id" => "required"
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = Product::get();
+                $data = [];
+                foreach($user as $product){
+                    $assigncat = Assigncategorie::where('product_id', $product->id)->get();
+                    $category = [];
+                    foreach($assigncat as $key){
+                        $cat = Categorie::where('id',$key->category_id)->get();
+                        $category[] = $cat;
+                    }
+
+                    $assignsubcat = Assignsubcategorie::where('product_id',$product->id)->get();
+                    $subcategory = [];
+                    foreach($assignsubcat as $key){
+                        $subcat = Subcategorie::where('id',$key->subcategory_id)->get();
+                        $subcategory = $subcat;
+                    }
+                    $data = array(
+                        "product" => $product,
+                        "category" => $category,
+                        "subcategory" => $subcategory
+                    );
+                }
+                
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'All Product Fetched',
+                                 'data' => $data,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        
         
         
 }

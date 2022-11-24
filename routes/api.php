@@ -24,6 +24,17 @@ Route::post("/addPost",'App\Http\Controllers\Api\AdminController@addPost');
 Route::post("/addNewsCategory",'App\Http\Controllers\Api\AdminController@addNewsCategory');
 Route::get("/getNewsCategory",'App\Http\Controllers\Api\AdminController@getNewsCategory');
 Route::post("/addNews",'App\Http\Controllers\Api\AdminController@addNews');
+Route::get("/getPosts",'App\Http\Controllers\Api\AdminController@getPosts');
+Route::get("/getNews",'App\Http\Controllers\Api\AdminController@getNews');
+Route::Post("/addLike",'App\Http\Controllers\Api\AdminController@addLike');
+Route::get("/getLikeCount",'App\Http\Controllers\Api\AdminController@getLikeCount');
+Route::post("/addFollwer",'App\Http\Controllers\Api\AdminController@addFollwer');
+Route::get("/imFollowing",'App\Http\Controllers\Api\AdminController@imFollowing');
+Route::post("/addProductCategory",'App\Http\Controllers\Api\AdminController@addProductCategory');
+Route::post("/addProductSubCategory",'App\Http\Controllers\Api\AdminController@addProductSubCategory');
+Route::post("/addProduct",'App\Http\Controllers\Api\AdminController@addProduct');
+Route::get("/getProduct",'App\Http\Controllers\Api\AdminController@getProduct');
+Route::get("/getProductById",'App\Http\Controllers\Api\AdminController@getProductById');
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
