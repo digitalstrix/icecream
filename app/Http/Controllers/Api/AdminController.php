@@ -5,9 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Assigncategorie;
 use App\Models\Assignsubcategorie;
+use App\Models\Blog;
 use App\Models\Categorie;
+use App\Models\Chat;
 use App\Models\Follower;
+use App\Models\Group;
 use App\Models\Like;
+use App\Models\Member;
+use App\Models\Message;
 use App\Models\Newe;
 use App\Models\Newscategorie;
 use App\Models\Post;
@@ -18,6 +23,7 @@ use App\Notifications\Authentication;
 use Dirape\Token\Token;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Twilio\Rest\Client;
 
@@ -108,12 +114,77 @@ class AdminController extends Controller
             }
         }
     }
+    public function loginAdmin(Request $request)
+    {
+        $rules =array(
+            "email" => "required|email",
+            "password" => "required|min:6",
+            "user_type" => "required|in:admin",
+        );
+        $validator= Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            return $validator->errors();
+        } else {
 
+            if($request->user_type=='admin'){
+                if(!User::where('email',$request->email)->where('user_type','admin')->first()){
+                    return response(["status" =>"failed", "message"=>"User is not Registered or Invaild User Type"], 401);
+                }
+                $user = User::where('email',$request->email)->first();
+                if(!Hash::check($request->password, $user->password)){
+                    return response(["status" =>"failed", "message"=>"Incorrect Password"], 401);
+                }
+            }
+            }
+            
+            if ($user){
+                $response = [
+                'user' => $user,
+                "message"=>"User is Logged IN"
+            ];
+                return response($response, 200);
+            }
+        }
+        public function registerAdmin(Request $request)
+        {
+            $rules =array( 
+                "name" => "required",
+                "email" => "required",
+                "password" => "required|min:6"           
+                );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                if(User::where('email',$request->email)->first()){
+                    return response(["status" =>"failed", "message"=>"Already Registered"], 401);
+                }
+                $user = new User();
+                $user->name =$request->name;
+                $user->email =$request->email;
+                $user->mobile = $request->mobile;
+                $user->user_type ='admin';
+                $user->password =Hash::make($request->password);
+                $token_qr = (new Token())->Unique('users', 'user_token', 60);
+                $user->user_token = $token_qr;
+                $result= $user->save();
+                if ($result) {
+                    $response = [
+                    'message' => 'User Created Successfully',
+                    'user' => $user
+                ];
+                    return response($response, 200);
+                }
+                else
+                {
+                    return response(["status" =>"failed", "message"=>"User is not created"], 401);
+                }
+            }
+        }
     function otpValidate(Request $request){
-    
         $rules =array(
             "user_cred" => "",
-            "otp" => "required",
+            "otp" => "required"
         );
         $validator= Validator::make($request->all(),$rules);
         if($validator->fails()){
@@ -163,7 +234,6 @@ class AdminController extends Controller
             }
             $user = User::where('email',$request->email)->first();
             }
-            
             if (isset($request->name)) {
                 $user->name = $request->name;
             }
@@ -172,6 +242,9 @@ class AdminController extends Controller
             }
             if (isset($request->user_type)) {
                 $user->user_type = $request->user_type;
+            }
+            if(isset($request->password)) {
+                $user->password =Hash::make($request->password);
             }
             if ($request->hasFile('user_profile')) {
                 $file = $request->file('user_profile')->store('public/img/user_profile');
@@ -254,7 +327,7 @@ class AdminController extends Controller
             if(!User::where('user_token',$request->token)->where('user_type','admin')->first()){
                 return response(["status" =>"failed", "message"=>"User token is not Admin Access token"], 401);
             }
-            if(!User::where('email',$request->email)->where('user_token',$request->token)->first())
+            if(!User::where('email',$request->email)->first())
             {
                 return response(["status" =>"failed", "message"=>"User is not Registered"], 401);
             }
@@ -679,6 +752,281 @@ class AdminController extends Controller
                 }
             }
         }
+        public function addChat(Request $request)
+        {
+            $rules =array(
+                "sender" => "required",
+                "receiver" => "required",
+                "message" => "required",
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = new Chat();
+                $user->sender = $request->sender;
+                $user->receiver = $request->receiver;
+                $user->messages = $request->message;
+                $user->save();
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Message Sent',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function getConversion(Request $request)
+        {
+            $rules =array(
+                "user1" => "required",
+                "user2" => "required",
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = Chat::where('sender',$request->user1)->where('receiver',$request->user2)->orwhere('sender',$request->user2)->where('receiver',$request->user1)->get();
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'All MessAGE Fetched',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function createGroup(Request $request)
+        {
+            $rules =array(
+                "userid" => "required",
+                "name" => "required",
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = new Group();
+                $user->name = $request->name;
+                $user->created_by = $request->userid;
+                $user->save();
+                $user1 = new Member();
+                $user1->group_id = $request->user->id;
+                $user1->member_id = $request->userid;
+                $user1->save();
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Group created successfully',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function getGroup(Request $request)
+        {
+            $rules =array(
+                
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = Group::all();
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Group Fetched successfully',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function addMemberInGroup(Request $request)
+        {
+            $rules =array(
+                "userid" => "required",
+                "groupid" => "required",
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                if(Member::where('group_id',$request->groupid)->where('member_id',$request->userid)->first()){
+                    return response(["status" => "error", "message" =>"Member Already in Group"], 401);
+                }
+                $user = new Member();
+                $user->group_id = $request->groupid;
+                $user->member_id = $request->userid;
+                $user->save();
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Member Added In Group successfully',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function removeMemberFromGroup(Request $request)
+        {
+            $rules =array(
+                "userid" => "required",
+                "groupid" => "required",
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                if(!Member::where('group_id',$request->groupid)->where('member_id',$request->userid)->first()){
+                    return response(["status" => "error", "message" =>"Member Not in Group"], 401);
+                }
+                $user = Member::where('group_id',$request->groupid)->where('member_id',$request->userid)->first()->delete();
+               
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Member Removed',
+                                //  'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function sendMessageInGroup(Request $request)
+        {
+            $rules =array(
+                "userid" => "required",
+                "groupid" => "required",
+                "message" => "required"
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                if(!Member::where('group_id',$request->groupid)->where('member_id',$request->userid)->first()){
+                    return response(["status" => "error", "message" =>"Member Not in Group"], 401);
+                }
+                $user = new Message();
+                $user->group_id = $request->groupid;
+                $user->member_id = $request->userid;
+                $user->messages = $request->message;
+                $user->save();
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Message sent successfully',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function getGroupById(Request $request)
+        {
+            $rules =array(
+                "groupid" => "required",
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $group = Group::where('id', $request->groupid)->first();
+                $members = Member::where('group_id', $request->groupid)->get();
+                $messages = Message::where('group_id', $request->groupid)->get();
+                $user = array(
+                    "Group_Details" => $group,
+                    "Members" => $members,
+                    "Messages" => $messages
+                );
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Group Fetched',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        public function addBlog(Request $request)
+        {
+            $rules =array(
+                "userid" => "required",
+                "content" => "required",
+                "image" => "required",
+                "caption" => "required",
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = new Blog();
+                $user->caption = $request->caption;
+                $user->content = $request->content;
+                $user->user_id = $request->userid;
+                if($request->hasFile('image'))
+                $file = $request->file('image')->store('public/img/Blogs');
+                $user->image = $file;
+                $user->save();
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Group Fetched',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        
+        public function getBlog(Request $request)
+        {
+            $rules =array(
+                
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = Blog::all();
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Group Fetched',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        
         
         
         

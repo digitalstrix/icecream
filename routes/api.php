@@ -35,6 +35,19 @@ Route::post("/addProductSubCategory",'App\Http\Controllers\Api\AdminController@a
 Route::post("/addProduct",'App\Http\Controllers\Api\AdminController@addProduct');
 Route::get("/getProduct",'App\Http\Controllers\Api\AdminController@getProduct');
 Route::get("/getProductById",'App\Http\Controllers\Api\AdminController@getProductById');
+Route::post("/addChat",'App\Http\Controllers\Api\AdminController@addChat');
+Route::get("/getConversion",'App\Http\Controllers\Api\AdminController@getConversion');
+Route::post("/createGroup",'App\Http\Controllers\Api\AdminController@createGroup');
+Route::get("/getGroup",'App\Http\Controllers\Api\AdminController@getGroup');
+Route::post("/addMemberInGroup",'App\Http\Controllers\Api\AdminController@addMemberInGroup');
+Route::delete("/removeMemberFromGroup",'App\Http\Controllers\Api\AdminController@removeMemberFromGroup');
+Route::post("/sendMessageInGroup",'App\Http\Controllers\Api\AdminController@sendMessageInGroup');
+Route::get("/getGroupById",'App\Http\Controllers\Api\AdminController@getGroupById');
+Route::post("/registerAdmin",'App\Http\Controllers\Api\AdminController@registerAdmin');
+Route::post("/loginAdmin",'App\Http\Controllers\Api\AdminController@loginAdmin');
+Route::post("/addBlog",'App\Http\Controllers\Api\AdminController@addBlog');
+Route::get("/getBlog",'App\Http\Controllers\Api\AdminController@getBlog');
+
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
