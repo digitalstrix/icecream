@@ -325,6 +325,9 @@ class AdminController extends Controller
             if (isset($request->turnover)) {
                 $user->turnover = $request->turnover;
             }
+            if (isset($request->certificate_issue)) {
+                $user->certificate_issue = $request->certificate_issue;
+            }
             if (isset($request->business_category)) {
                 foreach($request->business_category as $category){
                 if (!BusinessCategoryAssign::where('user_id', $user->id)->where('business_category_id', $category)->first()) {
@@ -1588,6 +1591,80 @@ class AdminController extends Controller
                 else
                 {
                     return response(["status" =>"failed", "message"=>"User is not created"], 401);
+                }
+            }
+        }
+        public function addPayment(Request $request)
+        {
+            $rules =array(
+                "user_id" => "required",
+                "package_code" => "required",
+                "payment_status" => "required",
+                "validity_date" =>  "required",
+             );
+            $validator= Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return $validator->errors();
+            } else {
+                $user = User::where('id',$request->user_id)->first();
+                $user->package_code = $request->package_code;
+                $user->is_subscribed = 1;
+                $user->payment_status = $request->payment_status;
+                $user->validity_date = $request->validity_date;
+            $user->save();
+
+                if ($user) {
+                    $response = [
+                                 'Status' => true,
+                                 'message' => 'Package Added successfully In Users Id',
+                                 'data' => $user,
+                ];
+                    return response($response, 201);
+                } else {
+                    return response(["status" => "error", "message" =>"Categorie is not created"], 401);
+                }
+            }
+        }
+        function getUserId(Request $request){
+            $rules =array(
+                "user_id" => "required"
+            );
+            $validator= Validator::make($request->all(),$rules);
+            if($validator->fails()){
+                return $validator->errors();
+            }
+            else{
+            $user = User::find($request->user_id);
+                if($user){
+                    $category = BusinessCategoryAssign::where('user_id', $user->id)->get('business_category_id');
+                    $subcategory = BusinessSubCategoryAssign::where('user_id', $user->id)->get('business_sub_category_id');
+                    $follower = Follower::where('follow',$user->id)->get()->count();
+                    $following = Follower::where('followed',$user->id)->get()->count();
+                    return response(["status" => "Sucess","message" => "user fetched","data" => $user,"follower"=>$follower,"following"=>$following,
+                    "business_category"=>$category,
+                    "business_sub_category"=>$subcategory,
+                    ], 200);
+                }
+                else{
+                    return response(["status" => "failed","message" => "Invalid OTP"], 200);
+                }
+            }
+        }
+        function getAllUser(Request $request){
+            $rules =array(
+            );
+            $validator= Validator::make($request->all(),$rules);
+            if($validator->fails()){
+                return $validator->errors();
+            }
+            else{
+            $user = User::all();
+                if($user){
+                    return response(["status" => "Sucess","message" => "user fetched","data" => $user
+                    ], 200);
+                }
+                else{
+                    return response(["status" => "failed","message" => "Invalid"], 200);
                 }
             }
         }

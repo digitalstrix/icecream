@@ -57,12 +57,15 @@ Route::post("/adduoms",'App\Http\Controllers\Api\AdminController@adduoms');
 Route::post("/addFactoryAddress",'App\Http\Controllers\Api\AdminController@addFactoryAddress');
 Route::post("/loginMember",'App\Http\Controllers\Api\AdminController@loginMember');
 Route::post("/registerMember",'App\Http\Controllers\Api\AdminController@registerMember');
+Route::post("/addPayment",'App\Http\Controllers\Api\AdminController@addPayment');
 
 
 Route::get("/getAdvertisement",'App\Http\Controllers\Api\AdminController@getAdvertisement');
 Route::get("/getPackage",'App\Http\Controllers\Api\AdminController@getPackage');
 Route::get("/getUoms",'App\Http\Controllers\Api\AdminController@getUoms');
 Route::get("/getFactoryByUser",'App\Http\Controllers\Api\AdminController@getFactoryByUser');
+Route::get("/getUserId",'App\Http\Controllers\Api\AdminController@getUserId');
+Route::get("/getAllUser",'App\Http\Controllers\Api\AdminController@getAllUser');
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
