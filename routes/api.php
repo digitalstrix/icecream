@@ -46,8 +46,23 @@ Route::get("/getGroupById",'App\Http\Controllers\Api\AdminController@getGroupByI
 Route::post("/registerAdmin",'App\Http\Controllers\Api\AdminController@registerAdmin');
 Route::post("/loginAdmin",'App\Http\Controllers\Api\AdminController@loginAdmin');
 Route::post("/addBlog",'App\Http\Controllers\Api\AdminController@addBlog');
+Route::get("/getBusinessSubCategory",'App\Http\Controllers\Api\AdminController@getBusinessSubCategory');
+Route::get("/getBusinessCategory",'App\Http\Controllers\Api\AdminController@getBusinessCategory');
 Route::get("/getBlog",'App\Http\Controllers\Api\AdminController@getBlog');
+Route::post("/addBusinessSubCategory",'App\Http\Controllers\Api\AdminController@addBusinessSubCategory');
+Route::post("/addBusinessCategory",'App\Http\Controllers\Api\AdminController@addBusinessCategory');
+Route::post("/addadvertisement",'App\Http\Controllers\Api\AdminController@addadvertisement');
+Route::post("/addpackage",'App\Http\Controllers\Api\AdminController@addpackage');
+Route::post("/adduoms",'App\Http\Controllers\Api\AdminController@adduoms');
+Route::post("/addFactoryAddress",'App\Http\Controllers\Api\AdminController@addFactoryAddress');
+Route::post("/loginMember",'App\Http\Controllers\Api\AdminController@loginMember');
+Route::post("/registerMember",'App\Http\Controllers\Api\AdminController@registerMember');
 
+
+Route::get("/getAdvertisement",'App\Http\Controllers\Api\AdminController@getAdvertisement');
+Route::get("/getPackage",'App\Http\Controllers\Api\AdminController@getPackage');
+Route::get("/getUoms",'App\Http\Controllers\Api\AdminController@getUoms');
+Route::get("/getFactoryByUser",'App\Http\Controllers\Api\AdminController@getFactoryByUser');
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
